@@ -34,6 +34,14 @@ jobs:
           ./gradlew publishToMavenLocal
         working-directory: spotube-gradle-plugin
 
+      - name: Random BS Go
+        run: |
+          cat << 'EOF' > spotube_plugin_youtube_music/local.properties
+          cookie=my-fav-cookie
+          dataSyncId=abs-not
+          visitorId=lol
+          EOF
+
       - name: Build plugin
         run: |
           chmod +x ./gradlew
