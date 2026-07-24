@@ -29,7 +29,9 @@ jobs:
           path: spotube-gradle-plugin
 
       - name: Publish spotube gradle plugin to maven local
-        run: ./gradlew publishToMavenLocal
+        run: |
+          chmod +x ./gradlew
+          ./gradlew publishToMavenLocal
         working-directory: spotube-gradle-plugin
 
       - name: Build plugin
