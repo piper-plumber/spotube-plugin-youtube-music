@@ -26,11 +26,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: team-spotube/gradle-plugin
-          path: /tmp/spotube-gradle-plugin
+          path: spotube-gradle-plugin
 
       - name: Publish spotube gradle plugin to maven local
         run: ./gradlew publishToMavenLocal
-        working-directory: /tmp/spotube-gradle-plugin
+        working-directory: spotube-gradle-plugin
 
       - name: Build plugin
         run: ./gradlew :spotube_plugin_youtube_music:packageProductionPlugin
