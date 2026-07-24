@@ -1,0 +1,4 @@
+name: Local
+variables:
+  - name: base_url
+    value: https://music.youtube.com/youtubei/v1

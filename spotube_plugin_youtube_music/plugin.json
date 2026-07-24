@@ -1,0 +1,15 @@
+{
+  "name": "youtube music",
+  "version": "0.1.0",
+  "description": "YouTube Music plugin for Spotube metadata fetching",
+  "apiVersion": "0.0.1",
+  "author": "Piper Plumber",
+  "capabilities": [
+    "PERSISTENT_STORAGE",
+    "NETWORK_REQUESTS",
+    "WEBVIEW"
+  ],
+  "abilities": [
+    "METADATA"
+  ]
+}

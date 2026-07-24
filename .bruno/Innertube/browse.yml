@@ -1,0 +1,68 @@
+info:
+  name: browse
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: https://music.youtube.com/youtubei/v1/browse?prettyPrint=false
+  headers:
+    - name: accept-language
+      value: en-GB,en;q=0.8
+    - name: content-encoding
+      value: gzip
+    - name: content-type
+      value: application/json
+    - name: origin
+      value: https://music.youtube.com
+    - name: referer
+      value: https://music.youtube.com/
+    - name: user-agent
+      value: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36
+    - name: x-origin
+      value: https://music.youtube.com
+    - name: x-youtube-bootstrap-logged-in
+      value: "true"
+    - name: x-youtube-client-name
+      value: "67"
+    - name: x-youtube-client-version
+      value: 1.20260503.12.00
+  params:
+    - name: prettyPrint
+      value: "false"
+      type: query
+  body:
+    type: json
+    data: |-
+      {
+        "context": {
+          "client": {
+            "hl": "en",
+            "gl": "BD",
+            "deviceMake": "",
+            "deviceModel": "",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36,gzip(gfe)",
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20260503.12.00",
+            "osName": "Windows",
+            "osVersion": "10.0",
+            "originalUrl": "https://music.youtube.com/",
+            "platform": "DESKTOP",
+            "clientFormFactor": "UNKNOWN_FORM_FACTOR",
+            "userInterfaceTheme": "USER_INTERFACE_THEME_DARK",
+            "timeZone": "Asia/Dhaka",
+            "browserName": "Chrome"
+          },
+          "user": {
+            "lockedSafetyMode": false
+          },
+        },
+        "browseId": "FEmusic_home"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

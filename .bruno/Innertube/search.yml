@@ -1,0 +1,60 @@
+info:
+  name: search
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{base_url}}/search?prettyPrint=false"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: X-Goog-Api-Format-Version
+      value: "1"
+    - name: X-YouTube-Client-Name
+      value: "67"
+    - name: X-YouTube-Client-Version
+      value: 1.20260213.01.00
+    - name: X-Origin
+      value: https://music.youtube.com
+    - name: Referer
+      value: https://music.youtube.com/
+    - name: User-Agent
+      value: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36,gzip(gfe)
+  params:
+    - name: prettyPrint
+      value: "false"
+      type: query
+  body:
+    type: json
+    data: |
+      {
+        "context": {
+          "client": {
+            "hl": "en",
+            "gl": "BD",
+            "clientName": "WEB_REMIX",
+            "clientVersion": "1.20260213.01.00",
+            "osName": "Windows",
+            "osVersion": "10.0",
+            "deviceMake": "",
+            "deviceModel": "",
+            "platform": "DESKTOP",
+            "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36,gzip(gfe)",
+            "clientFormFactor": "UNKNOWN_FORM_FACTOR",
+            "originalUrl": "https://music.youtube.com/"
+          },
+          "user": {
+            "lockedSafetyMode": false
+          }
+        },
+        "query": "Souls",
+        "params": "asdasd"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
