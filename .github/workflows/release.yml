@@ -22,10 +22,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Checkout spotube gradle plugin
+        uses: actions/checkout@v7
+        with:
+          repository: team-spotube/gradle-plugin
+          path: /tmp/spotube-gradle-plugin
+
       - name: Publish spotube gradle plugin to maven local
-        run: |
-          git clone https://github.com/team-spotube/gradle-plugin.git /tmp/spotube-gradle-plugin
-          ./gradlew publishToMavenLocal
+        run: ./gradlew publishToMavenLocal
         working-directory: /tmp/spotube-gradle-plugin
 
       - name: Build plugin
