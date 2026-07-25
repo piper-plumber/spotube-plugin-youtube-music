@@ -1,6 +1,7 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec
+import dev.krtirtho.PluginAbility
+import dev.krtirtho.PluginCapability
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension
 import java.util.Properties
@@ -13,6 +14,20 @@ plugins {
     alias(libs.plugins.zipline.gradle.plugin)
     alias(libs.plugins.spotubeGradle)
     id("com.codingfeline.buildkonfig") version "0.18.0"
+}
+
+spotubePlugin {
+    name = "YouTube Music"
+    version = "0.1.0"
+    apiVersion = "0.0.1"
+    description = "YouTube Music plugin for Spotube metadata fetching"
+    author = "Piper Plumber"
+    capabilities = listOf(
+        PluginCapability.PERSISTENT_STORAGE,
+        PluginCapability.NETWORK_REQUESTS,
+        PluginCapability.WEBVIEW
+    )
+    abilities = listOf(PluginAbility.METADATA)
 }
 
 buildkonfig {
