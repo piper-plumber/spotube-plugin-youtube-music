@@ -28,6 +28,10 @@ spotubePlugin {
         PluginCapability.WEBVIEW
     )
     abilities = listOf(PluginAbility.METADATA)
+    contact = "Piper Plumber <piper.plumber@tutamail.com>"
+    repository = "https://github.com/piper-plumber/spotube-plugin-youtube-music"
+    bugs = "https://github.com/piper-plumber/spotube-plugin-youtube-music/issues"
+    license = "AGPL-3.0-or-later"
 }
 
 buildkonfig {
