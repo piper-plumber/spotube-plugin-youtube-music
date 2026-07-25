@@ -49,13 +49,12 @@ jobs:
           chmod +x ./gradlew
           ./gradlew :spotube_plugin_youtube_music:packageProductionPlugin
 
-      - name: Read version from plugin.json
+      - name: Read version from build.gradle.kts
         if: ${{ !inputs.nightly }}
         id: version
-        uses: notiz-dev/github-action-json-property@release
-        with:
-          path: spotube_plugin_youtube_music/plugin.json
-          prop_path: version
+        run: |
+          VERSION=$(sed -n '/spotubePlugin {/,/}/ { s/.*version = "\(.*\)"/\1/p }' spotube_plugin_youtube_music/build.gradle.kts | head -1)
+          echo "prop=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set tag name
         id: tag
