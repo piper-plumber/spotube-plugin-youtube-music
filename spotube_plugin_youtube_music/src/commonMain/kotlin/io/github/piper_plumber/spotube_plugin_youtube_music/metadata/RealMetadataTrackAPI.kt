@@ -12,6 +12,11 @@ import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTu
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.SongItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.WatchEndpoint
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.Artist
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 internal fun SongItem.toMetadataTrack(): MetadataTrack {
 
@@ -70,8 +75,13 @@ internal fun io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube
 }
 
 class RealMetadataTrackAPI(val youTube: YouTube) : MetadataTrackAPI {
+    private companion object {
+        val LIKED_CACHE_TTL = 5.minutes
+        const val MAX_LIKED_PAGES = 20
+    }
+
     override suspend fun getTrack(id: String): MetadataTrack {
-        val nextResult = youTube.next(WatchEndpoint(videoId = id)).getOrThrow()
+        val nextResult = youTube.next(WatchEndpoint(videoId = id), loadAutomix = false).getOrThrow()
         val song = nextResult.items.find { it.id == id }
             ?: throw Exception("Track not found: $id")
 
@@ -137,26 +147,55 @@ class RealMetadataTrackAPI(val youTube: YouTube) : MetadataTrackAPI {
         )
     }
 
-    override suspend fun isSavedTracks(ids: List<String>): List<Boolean> {
-        return ids.map { id ->
-            runCatching {
-                val nextResult = youTube.next(WatchEndpoint(videoId = id)).getOrThrow()
-                val song = nextResult.items.find { it.id == id }
-                song?.libraryRemoveToken != null
-            }.getOrDefault(false)
+    private class LikedSongs(val session: String, val ids: MutableSet<String>, val fetchedAt: TimeMark)
+
+    private val likedMutex = Mutex()
+    private var likedSongs: LikedSongs? = null
+
+    private fun sessionKey() = "${youTube.cookie}|${youTube.dataSyncId}"
+
+    /**
+     * Ids of the songs on the account's liked list (the same list [savedTracks] returns).
+     * Fetched once per session and cached, instead of one `next()` request per queried track.
+     */
+    private suspend fun likedSongIds(): Set<String> = likedMutex.withLock {
+        val session = sessionKey()
+        likedSongs?.let { if (it.session == session && it.fetchedAt.elapsedNow() < LIKED_CACHE_TTL) return@withLock it.ids }
+
+        val ids = mutableSetOf<String>()
+        val first = youTube.library("FEmusic_liked_videos").getOrThrow()
+        ids += first.items.filterIsInstance<SongItem>().map { it.id }
+        var token = first.continuation
+        val seen = mutableSetOf<String>()
+        while (token != null && seen.add(token) && seen.size <= MAX_LIKED_PAGES) {
+            val page = youTube.libraryContinuation(token).getOrThrow()
+            ids += page.items.filterIsInstance<SongItem>().map { it.id }
+            token = page.continuation
         }
+        likedSongs = LikedSongs(session, ids, TimeSource.Monotonic.markNow())
+        ids
+    }
+
+    override suspend fun isSavedTracks(ids: List<String>): List<Boolean> {
+        val liked = runCatching { likedSongIds() }.getOrElse {
+            // Not signed in or a transient failure: report "not saved" rather than failing the whole screen
+            return ids.map { false }
+        }
+        return ids.map { it in liked }
     }
 
     override suspend fun saveTracks(ids: List<String>) {
         ids.forEach { id ->
             youTube.addSongToLibrary(id).getOrThrow()
         }
+        likedMutex.withLock { likedSongs = null }
     }
 
     override suspend fun removeSavedTracks(ids: List<String>) {
         ids.forEach { id ->
             youTube.removeSongFromLibrary(id).getOrThrow()
         }
+        likedMutex.withLock { likedSongs = null }
     }
 
     override suspend fun recommendationsBasedOnTracks(

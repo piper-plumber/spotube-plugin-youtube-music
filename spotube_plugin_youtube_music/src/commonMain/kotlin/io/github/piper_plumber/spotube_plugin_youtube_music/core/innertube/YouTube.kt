@@ -30,6 +30,8 @@ import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.model
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.YouTubeClient.Companion.WEB_REMIX
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.YouTubeLocale
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.getContinuation
+import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.utils.parseCookieString
+import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.getContinuationItemToken
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.getItems
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.oddElements
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.response.AccountMenuResponse
@@ -1016,10 +1018,11 @@ class YouTube(
                                 )
                             },
                         songCountText =
-                            header.secondSubtitle
-                                ?.runs
-                                ?.firstOrNull()
-                                ?.text,
+                            header.secondSubtitle?.runs?.let { runs ->
+                                runs.firstOrNull { it.text.contains(Regex("\\d\\s*(songs?|tracks?|videos?|episodes?)", RegexOption.IGNORE_CASE)) }
+                                    ?.text
+                                    ?: runs.joinToString("") { it.text }
+                            },
                         thumbnail =
                             header.thumbnail
                                 ?.musicThumbnailRenderer
@@ -1481,6 +1484,8 @@ class YouTube(
                 WEB_REMIX,
                 browseId = "FEmusic_home",
                 params = params,
+                // The continuation is requested with login, so the first page must use the same session
+                setLogin = true,
             )
 
             val response = browseResponse.body<BrowseResponse>()
@@ -1494,8 +1499,7 @@ class YouTube(
                     ?.tabRenderer
                     ?.content
                     ?.sectionListRenderer
-                    ?.continuations
-                    ?.getContinuation()
+                    ?.let { it.continuations?.getContinuation() ?: it.contents?.getContinuationItemToken() }
             val sectionListRender =
                 response.contents
                     ?.singleColumnBrowseResultsRenderer
@@ -1533,8 +1537,7 @@ class YouTube(
             val continuation =
                 response.continuationContents
                     ?.sectionListContinuation
-                    ?.continuations
-                    ?.getContinuation()
+                    ?.let { it.continuations?.getContinuation() ?: it.contents?.getContinuationItemToken() }
             HomePage(
                 null,
                 response.continuationContents
@@ -1707,12 +1710,13 @@ class YouTube(
                                                 ?.text,
                                         items =
                                             content.musicCarouselShelfRenderer.contents
-                                                .mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
-                                                .mapNotNull { renderer ->
-                                                    LibraryPage.fromMusicTwoRowItemRenderer(renderer)
-                                                        ?: RelatedPage.fromMusicTwoRowItemRenderer(
-                                                            renderer
-                                                        )
+                                                .mapNotNull { shelfItem ->
+                                                    shelfItem.musicTwoRowItemRenderer?.let { renderer ->
+                                                        LibraryPage.fromMusicTwoRowItemRenderer(renderer)
+                                                            ?: RelatedPage.fromMusicTwoRowItemRenderer(renderer)
+                                                    } ?: shelfItem.musicResponsiveListItemRenderer?.let {
+                                                        LibraryPage.fromMusicResponsiveListItemRenderer(it)
+                                                    }
                                                 },
                                     )
                                 }
@@ -1792,7 +1796,24 @@ class YouTube(
                 else -> {
                     val shelfContents = contents?.musicShelfRenderer?.contents
                     if (shelfContents == null) {
-                        throw IllegalStateException("No content found for browseId=$browseId")
+                        // Logged out: YouTube answers 200 with a "Sign in" message instead of the library
+                        if (responseText.contains("\"messageRenderer\"") && responseText.contains("Sign in")) {
+                            throw IllegalStateException(
+                                "Not signed in: YouTube Music treated the request as logged out for browseId=$browseId " +
+                                        "(cookieSet=${cookie != null}, sapisid=${cookie?.contains("SAPISID=") == true}, " +
+                                        "useLogin=$useLoginForBrowse, cookieNames=${cookie?.let { parseCookieString(it).keys }})"
+                            )
+                        }
+                        // Logged in but nothing saved yet: YouTube answers with "No albums yet" and similar messages
+                        if (tabs != null && responseText.contains("\"messageRenderer\"")) {
+                            return@runCatching LibraryPage(items = emptyList(), continuation = null)
+                        }
+                        throw IllegalStateException(
+                            "No content found for browseId=$browseId " +
+                                    "(cookieSet=${cookie != null}, sapisid=${cookie?.contains("SAPISID=") == true}, " +
+                                    "useLogin=$useLoginForBrowse, tabs=${tabs?.size}, " +
+                                    "response=${responseText.take(300)})"
+                        )
                     }
                     val listItemRenderers =
                         shelfContents.mapNotNull(MusicShelfRenderer.Content::musicResponsiveListItemRenderer)
@@ -2819,6 +2840,8 @@ class YouTube(
     suspend fun next(
         endpoint: WatchEndpoint,
         continuation: String? = null,
+        // Following the automix link costs a second request; callers that only need the song itself can skip it
+        loadAutomix: Boolean = true,
     ): Result<NextResult> =
         runCatching {
             val response =
@@ -2871,6 +2894,7 @@ class YouTube(
             // load automix items
             playlistPanelRenderer.contents
                 .lastOrNull()
+                ?.takeIf { loadAutomix }
                 ?.automixPreviewVideoRenderer
                 ?.content
                 ?.automixPlaylistVideoRenderer
@@ -3087,7 +3111,7 @@ class YouTube(
     suspend fun addSongToLibrary(videoId: String): Result<Boolean> =
         runCatching {
             // Get fresh song data with menu tokens using next endpoint
-            val nextResult = next(WatchEndpoint(videoId = videoId)).getOrThrow()
+            val nextResult = next(WatchEndpoint(videoId = videoId), loadAutomix = false).getOrThrow()
             val song =
                 nextResult.items.find { it.id == videoId }
                     ?: throw Exception("Song not found in next response")
@@ -3105,7 +3129,7 @@ class YouTube(
     suspend fun removeSongFromLibrary(videoId: String): Result<Boolean> =
         runCatching {
             // Get fresh song data with menu tokens using next endpoint
-            val nextResult = next(WatchEndpoint(videoId = videoId)).getOrThrow()
+            val nextResult = next(WatchEndpoint(videoId = videoId), loadAutomix = false).getOrThrow()
             val song =
                 nextResult.items.find { it.id == videoId }
                     ?: throw Exception("Song not found in next response")

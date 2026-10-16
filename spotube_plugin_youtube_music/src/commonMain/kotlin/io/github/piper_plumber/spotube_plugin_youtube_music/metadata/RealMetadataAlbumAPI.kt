@@ -99,12 +99,12 @@ internal fun AlbumItem.toMetadataAlbumDetailed(artist: ArtistPage? = null): Meta
 
 class RealMetadataAlbumAPI(private val youTube: YouTube) : MetadataAlbumAPI {
     override suspend fun getAlbum(id: String): MetadataAlbum.Detailed {
-        val albumPage = youTube.album(id, withSongs = false).getOrThrow()
+        val albumPage = youTube.album(id).getOrThrow()
         return albumPage.toMetadataAlbumDetailed()
     }
 
     override suspend fun getTrackAlbum(track: MetadataTrack): MetadataAlbum.Detailed {
-        val nextResult = youTube.next(WatchEndpoint(videoId = track.id)).getOrThrow()
+        val nextResult = youTube.next(WatchEndpoint(videoId = track.id), loadAutomix = false).getOrThrow()
         val song = nextResult.items.find { it.id == track.id }
 
         val albumInfo = song?.album
@@ -170,7 +170,16 @@ class RealMetadataAlbumAPI(private val youTube: YouTube) : MetadataAlbumAPI {
         val savedIds = libraryPage.items
             .filterIsInstance<AlbumItem>()
             .map { it.browseId }
-            .toSet()
+            .toMutableSet()
+
+        var continuation = libraryPage.continuation
+        var requestCount = 0
+        while (continuation != null && requestCount < 10) {
+            val nextPage = youTube.libraryContinuation(continuation).getOrThrow()
+            nextPage.items.filterIsInstance<AlbumItem>().forEach { savedIds.add(it.browseId) }
+            continuation = nextPage.continuation
+            requestCount++
+        }
 
         return ids.map { it in savedIds }
     }
@@ -179,7 +188,7 @@ class RealMetadataAlbumAPI(private val youTube: YouTube) : MetadataAlbumAPI {
         ids.forEach { id ->
             val albumPage = youTube.album(id).getOrThrow()
             val playlistId = albumPage.album.playlistId
-            youTube.likePlaylist(playlistId, true)
+            youTube.likePlaylist(playlistId, true).getOrThrow()
         }
     }
 
@@ -187,7 +196,7 @@ class RealMetadataAlbumAPI(private val youTube: YouTube) : MetadataAlbumAPI {
         ids.forEach { id ->
             val albumPage = youTube.album(id).getOrThrow()
             val playlistId = albumPage.album.playlistId
-            youTube.likePlaylist(playlistId, false)
+            youTube.likePlaylist(playlistId, false).getOrThrow()
         }
     }
 }

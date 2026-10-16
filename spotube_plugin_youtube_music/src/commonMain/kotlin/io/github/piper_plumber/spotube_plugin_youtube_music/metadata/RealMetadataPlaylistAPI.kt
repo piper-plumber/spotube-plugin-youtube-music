@@ -10,14 +10,20 @@ import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import kotlin.io.encoding.Base64
 
+/** Extracts "182" from texts like "1B views • 182 tracks • 13+ hours" or "1,234 songs" */
+internal fun parseTrackCount(text: String?): Int {
+    if (text == null) return 0
+    val counted = Regex("(\\d[\\d,.]*)\\s*(?:songs?|tracks?|videos?|episodes?)", RegexOption.IGNORE_CASE).find(text)
+    val digits = counted?.groupValues?.get(1) ?: Regex("\\d[\\d,]*").find(text)?.value
+    return digits?.replace(",", "")?.toIntOrNull() ?: 0
+}
+
 class RealMetadataPlaylistAPI(val youTube: YouTube) : MetadataPlaylistAPI {
     override suspend fun getPlaylist(id: String): MetadataPlaylist {
         val playlistPage = youTube.playlist(id).getOrThrow()
         val playlist = playlistPage.playlist
 
-        val songCount = playlist.songCountText?.let {
-            Regex("\\d+").find(it)?.value?.toIntOrNull()
-        } ?: 0
+        val songCount = parseTrackCount(playlist.songCountText)
 
         val thumbnails = playlist.thumbnail?.let {
             listOf(
@@ -188,9 +194,7 @@ class RealMetadataPlaylistAPI(val youTube: YouTube) : MetadataPlaylistAPI {
         val playlistPage = youTube.playlist(id).getOrThrow()
         val playlist = playlistPage.playlist
 
-        val songCount = playlist.songCountText?.let {
-            Regex("\\d+").find(it)?.value?.toIntOrNull()
-        } ?: 0
+        val songCount = parseTrackCount(playlist.songCountText)
 
         return MetadataPlaylist(
             id = playlist.id,
@@ -253,9 +257,7 @@ class RealMetadataPlaylistAPI(val youTube: YouTube) : MetadataPlaylistAPI {
     }
 
     internal fun io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.PlaylistItem.toMetadataPlaylist(): MetadataPlaylist {
-        val songCount = songCountText?.let {
-            Regex("\\d+").find(it)?.value?.toIntOrNull()
-        } ?: 0
+        val songCount = parseTrackCount(songCountText)
 
         val owner = author?.let { artist ->
             MetadataUser(

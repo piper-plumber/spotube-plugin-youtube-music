@@ -112,9 +112,9 @@ class InnerTube(
             visitorData?.let { append("X-Goog-Visitor-Id", it) }
             logger.i { "[ytClient] is cookie set: ${setLogin && client.loginSupported}" }
             if (setLogin && client.loginSupported) {
-                logger.i { "[ytClient] Appending cookie header with value $cookie" }
                 cookie?.let { cookie ->
                     append("cookie", cookie)
+                    append("X-Goog-AuthUser", "0")
                     logger.i { "[ytClient] Appending Authorization header" }
 
                     sapisidHash?.let {

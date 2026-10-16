@@ -14,6 +14,8 @@ import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.model
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.ArtistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.PlaylistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.SongItem
+import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.pages.ArtistPage
+import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.pages.ArtistSection
 
 internal fun ArtistItem.toMetadataArtistDetailed(
     description: String? = null,
@@ -81,22 +83,13 @@ class RealMetadataArtistAPI(private val youTube: YouTube) : MetadataArtistAPI {
             monthlyListeners = monthlyListeners
         )
 
-        val top10Tracks = artistPage.sections
-            .flatMap { section -> section.items.filterIsInstance<SongItem>() }
-            .distinctBy { it.id }
-            .take(10)
-            .map { it.toMetadataTrack() }
+        val top10Tracks = artistPage.topSongs()
 
-        val albumsSection = artistPage.sections.find { section ->
-            section.title.contains("album", ignoreCase = true) ||
-                    section.title.contains("singles", ignoreCase = true) ||
-                    section.title.contains("releases", ignoreCase = true) ||
-                    section.title.contains("compilation", ignoreCase = true)
-        }
-
-        val albums = albumsSection?.items?.filterIsInstance<AlbumItem>()
-            ?.map { it.toMetadataAlbumDetailed(artist = artistPage) }
-            ?: emptyList()
+        val albums = artistPage.sections
+            .filter { it.isAlbumSection() }
+            .flatMap { it.items.filterIsInstance<AlbumItem>() }
+            .distinctBy { it.browseId }
+            .map { it.toMetadataAlbumDetailed(artist = artistPage) }
 
         val relatedSection = artistPage.sections.find { section ->
             section.items.any { it is ArtistItem } &&
@@ -134,13 +127,7 @@ class RealMetadataArtistAPI(private val youTube: YouTube) : MetadataArtistAPI {
 
     override suspend fun getArtistTop10Tracks(id: String): List<MetadataTrack> {
         val artistPage = youTube.artist(id).getOrThrow()
-        return artistPage.sections
-            .flatMap { section ->
-                section.items.filterIsInstance<SongItem>()
-            }
-            .distinctBy { it.id }
-            .take(10)
-            .map { it.toMetadataTrack() }
+        return artistPage.topSongs()
     }
 
     override suspend fun relatedArtists(
@@ -200,22 +187,39 @@ class RealMetadataArtistAPI(private val youTube: YouTube) : MetadataArtistAPI {
         id: String,
         pagination: PaginationStrategy?
     ): PaginationResult<MetadataAlbum.Detailed> {
+        // The artist page only carries a ~10 item preview per shelf (Albums, Singles & EPs).
+        // The full lists live behind each shelf's "more" endpoint (MPAD... browse id).
         val artistPage = youTube.artist(id).getOrThrow()
-        val albumsSection = artistPage.sections.find { section ->
-            section.title.contains("album", ignoreCase = true) ||
-                    section.title.contains("singles", ignoreCase = true) ||
-                    section.title.contains("releases", ignoreCase = true)
+        val sections = artistPage.sections.filter { it.isAlbumSection() }
+
+        val continuationToken = (pagination as? PaginationStrategy.Continuation)?.continuationToken
+        if (continuationToken != null) {
+            val page = youTube.artistItemsContinuation(continuationToken).getOrThrow()
+            val albums = page.items.filterIsInstance<AlbumItem>()
+                .map { it.toMetadataAlbumDetailed(artist = artistPage) }
+            return PaginationResult(
+                items = albums,
+                totalCount = -1,
+                nextPagination = page.continuation?.let { PaginationStrategy.Continuation(it) }
+            )
         }
 
-        val albums = albumsSection?.items?.filterIsInstance<AlbumItem>()
-            ?.map { it.toMetadataAlbumDetailed(artist = artistPage) }
-            ?: emptyList()
-
+        val albums = mutableListOf<AlbumItem>()
+        var nextToken: String? = null
+        for (section in sections) {
+            val full = section.moreEndpoint?.let { youTube.artistItems(it).getOrNull() }
+            val items = (full?.items ?: section.items).filterIsInstance<AlbumItem>()
+            albums.addAll(items)
+            if (full?.continuation != null) {
+                nextToken = full.continuation
+                break
+            }
+        }
 
         return PaginationResult(
-            items = albums,
-            totalCount = albums.size,
-            nextPagination = null
+            items = albums.distinctBy { it.browseId }.map { it.toMetadataAlbumDetailed(artist = artistPage) },
+            totalCount = -1,
+            nextPagination = nextToken?.let { PaginationStrategy.Continuation(it) }
         )
     }
 
@@ -288,6 +292,23 @@ class RealMetadataArtistAPI(private val youTube: YouTube) : MetadataArtistAPI {
                 youTube.subscribeChannel(channelId, subscribe = false).getOrThrow()
             }
         }
+    }
+
+    private fun ArtistSection.isAlbumSection(): Boolean =
+        items.any { it is AlbumItem } && (
+                title.contains("album", ignoreCase = true) ||
+                        title.contains("singles", ignoreCase = true) ||
+                        title.contains("releases", ignoreCase = true) ||
+                        title.contains("compilation", ignoreCase = true))
+
+    private fun ArtistPage.topSongs(): List<MetadataTrack> {
+        val shelf = sections.firstOrNull { it.title.contains("song", ignoreCase = true) && it.items.any { i -> i is SongItem } }
+            ?: sections.firstOrNull { it.items.any { i -> i is SongItem } }
+        return shelf?.items.orEmpty()
+            .filterIsInstance<SongItem>()
+            .distinctBy { it.id }
+            .take(10)
+            .map { it.toMetadataTrack() }
     }
 
     private fun parseCountText(text: String): Int? {
