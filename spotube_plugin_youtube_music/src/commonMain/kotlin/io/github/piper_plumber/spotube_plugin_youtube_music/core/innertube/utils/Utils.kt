@@ -1,6 +1,6 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.utils
 
-import dev.krtirtho.plugin_interfaces.host_apis.HashAlgorithms
+import org.spotube.plugin_interfaces.host_apis.HashAlgorithms
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.services.SingletonsRegistry
 
 //@JvmName("completedLibrary")

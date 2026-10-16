@@ -1,19 +1,19 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSupportedSearchType
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSearchResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.search.MetadataSupportedSearchType
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.AlbumItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.ArtistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.PlaylistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.SongItem
 
-internal fun PlaylistItem.toMetadataPlaylist(): dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist {
+internal fun PlaylistItem.toMetadataPlaylist(): org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist {
     val songCount = songCountText?.let {
         Regex("\\d+").find(it)?.value?.toIntOrNull()
     } ?: 0
@@ -28,7 +28,7 @@ internal fun PlaylistItem.toMetadataPlaylist(): dev.krtirtho.plugin_interfaces.p
         )
     }
 
-    return dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist(
+    return org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist(
         id = id,
         title = title,
         description = null,

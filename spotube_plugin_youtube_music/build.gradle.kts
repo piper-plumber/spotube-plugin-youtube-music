@@ -1,6 +1,6 @@
 import com.codingfeline.buildkonfig.compiler.FieldSpec
-import dev.krtirtho.PluginAbility
-import dev.krtirtho.PluginCapability
+import org.spotube.PluginAbility
+import org.spotube.PluginCapability
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension

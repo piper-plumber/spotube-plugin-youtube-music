@@ -1,7 +1,7 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.YouTubeLocale
 import io.github.piper_plumber.spotube_plugin_youtube_music.test_utils.RealHttpClientAPI

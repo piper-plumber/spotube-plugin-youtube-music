@@ -1,7 +1,7 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube
 
-import dev.krtirtho.plugin_interfaces.extras.logger.Logger
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.extras.logger.Logger
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.AccountInfo
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.AlbumItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.Artist

@@ -1,11 +1,11 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.host_apis.Cookie
-import dev.krtirtho.plugin_interfaces.host_apis.PersistedStorageAPI
-import dev.krtirtho.plugin_interfaces.host_apis.WebViewAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.CoreAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.PluginUpdateInfo
-import dev.krtirtho.plugin_interfaces.extras.logger.Logger
+import org.spotube.plugin_interfaces.host_apis.Cookie
+import org.spotube.plugin_interfaces.host_apis.PersistedStorageAPI
+import org.spotube.plugin_interfaces.host_apis.WebViewAPI
+import org.spotube.plugin_interfaces.plugin_apis.core.CoreAPI
+import org.spotube.plugin_interfaces.plugin_apis.core.PluginUpdateInfo
+import org.spotube.plugin_interfaces.extras.logger.Logger
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

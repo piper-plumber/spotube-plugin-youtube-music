@@ -1,11 +1,11 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube
 
-import dev.krtirtho.plugin_interfaces.extras.logger.Logger
-import dev.krtirtho.plugin_interfaces.extras.spotor.HttpRequestBuilder
-import dev.krtirtho.plugin_interfaces.extras.spotor.JsonContentSerializer
-import dev.krtirtho.plugin_interfaces.extras.spotor.SpotrClient
-import dev.krtirtho.plugin_interfaces.extras.spotor.SpotrHttpResponse
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.extras.logger.Logger
+import org.spotube.plugin_interfaces.extras.spotor.HttpRequestBuilder
+import org.spotube.plugin_interfaces.extras.spotor.JsonContentSerializer
+import org.spotube.plugin_interfaces.extras.spotor.SpotrClient
+import org.spotube.plugin_interfaces.extras.spotor.SpotrHttpResponse
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.Context
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.MediaInfo
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.ReturnYouTubeDislikeResponse

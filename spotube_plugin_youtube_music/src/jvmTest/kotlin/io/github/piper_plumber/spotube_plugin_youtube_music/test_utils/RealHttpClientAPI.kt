@@ -1,8 +1,8 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.test_utils
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.HttpMethod
-import dev.krtirtho.plugin_interfaces.host_apis.HttpResponse
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpMethod
+import org.spotube.plugin_interfaces.host_apis.HttpResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.request.request

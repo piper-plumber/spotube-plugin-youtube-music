@@ -1,12 +1,12 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylistAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import kotlin.io.encoding.Base64
 

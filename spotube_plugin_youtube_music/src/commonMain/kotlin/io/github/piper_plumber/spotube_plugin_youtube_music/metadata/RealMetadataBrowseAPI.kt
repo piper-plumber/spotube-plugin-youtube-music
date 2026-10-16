@@ -1,12 +1,12 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.extras.logger.Logger
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseGenre
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseItem
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseSection
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.extras.logger.Logger
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseGenre
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseItem
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseSection
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.AlbumItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.ArtistItem

@@ -1,8 +1,8 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUserAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.YouTube
 
 class RealMetadataUserAPI(val youTube: YouTube) : MetadataUserAPI {

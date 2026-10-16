@@ -50,7 +50,7 @@ Version catalog: `gradle/libs.versions.toml`
 
 ## Gotchas
 
-- **`spotube-plugin-interfaces`** is an external dependency (`dev.krtirtho.spotube:plugin_interfaces`). Must be resolvable from Maven Central or `mavenLocal()`. If missing, publish it locally first.
+- **`spotube-plugin-interfaces`** is an external dependency (`org.spotube.spotube:plugin_interfaces`). Must be resolvable from Maven Central or `mavenLocal()`. If missing, publish it locally first.
 - Tests require Chrome/Chromium installed (Karma uses `ChromeHeadless`).
 - Kotlin incremental compilation for JS is explicitly disabled (`gradle.properties`) due to KT-82395.
 - `plugin.json` declares capabilities: `PERSISTENT_STORAGE`, `NETWORK_REQUESTS`, `WEBVIEW` and ability: `METADATA`.
