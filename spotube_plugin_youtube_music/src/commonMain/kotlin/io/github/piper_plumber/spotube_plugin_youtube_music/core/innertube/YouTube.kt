@@ -178,6 +178,69 @@ class YouTube(
             val response = innerTube.search(WEB_REMIX, query).body<SearchResponse>()
             val allSummaries = mutableListOf<SearchSummary>()
 
+            // Groups untitled results by type into separate sections, in a logical order
+            fun addGrouped(items: List<YTItem>) {
+                // No title - group items by type into separate sections
+                val grouped =
+                    items.groupBy { item ->
+                        when (item) {
+                            is EpisodeItem -> {
+                                "Episodes"
+                            }
+
+                            is PodcastItem -> {
+                                "Podcasts"
+                            }
+
+                            is AlbumItem -> {
+                                "Albums"
+                            }
+
+                            is ArtistItem -> {
+                                if (item.isProfile) "Profiles" else "Artists"
+                            }
+
+                            is PlaylistItem -> {
+                                "Playlists"
+                            }
+
+                            is SongItem -> {
+                                when {
+                                    item.isEpisode -> "Episodes"
+                                    item.isVideoSong -> "Videos"
+                                    else -> "Songs"
+                                }
+                            }
+                        }
+                    }
+
+                // Add each group as a separate section in a logical order
+                val sectionOrder =
+                    listOf(
+                        "Songs",
+                        "Videos",
+                        "Albums",
+                        "Artists",
+                        "Playlists",
+                        "Podcasts",
+                        "Episodes",
+                        "Profiles",
+                        YouTubeConstants.DEFAULT_OTHER_RESULTS,
+                    )
+                sectionOrder.forEach { sectionName ->
+                    grouped[sectionName]?.let { groupItems ->
+                        if (groupItems.isNotEmpty()) {
+                            allSummaries.add(
+                                SearchSummary(
+                                    title = sectionName,
+                                    items = groupItems
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             response.contents
                 ?.tabbedSearchResultsRenderer
                 ?.tabs
@@ -237,68 +300,27 @@ class YouTube(
                             // API provided a title, use single section
                             allSummaries.add(SearchSummary(title = apiTitle, items = items))
                         } else {
-                            // No title - group items by type into separate sections
-                            val grouped =
-                                items.groupBy { item ->
-                                    when (item) {
-                                        is EpisodeItem -> {
-                                            "Episodes"
-                                        }
-
-                                        is PodcastItem -> {
-                                            "Podcasts"
-                                        }
-
-                                        is AlbumItem -> {
-                                            "Albums"
-                                        }
-
-                                        is ArtistItem -> {
-                                            if (item.isProfile) "Profiles" else "Artists"
-                                        }
-
-                                        is PlaylistItem -> {
-                                            "Playlists"
-                                        }
-
-                                        is SongItem -> {
-                                            when {
-                                                item.isEpisode -> "Episodes"
-                                                item.isVideoSong -> "Videos"
-                                                else -> "Songs"
-                                            }
-                                        }
-                                    }
-                                }
-
-                            // Add each group as a separate section in a logical order
-                            val sectionOrder =
-                                listOf(
-                                    "Songs",
-                                    "Videos",
-                                    "Albums",
-                                    "Artists",
-                                    "Playlists",
-                                    "Podcasts",
-                                    "Episodes",
-                                    "Profiles",
-                                    YouTubeConstants.DEFAULT_OTHER_RESULTS,
-                                )
-                            sectionOrder.forEach { sectionName ->
-                                grouped[sectionName]?.let { groupItems ->
-                                    if (groupItems.isNotEmpty()) {
-                                        allSummaries.add(
-                                            SearchSummary(
-                                                title = sectionName,
-                                                items = groupItems
-                                            )
-                                        )
-                                    }
-                                }
-                            }
+                            addGrouped(items)
                         }
                     }
                 }
+
+            // Newer responses list every result as its own itemSectionRenderer instead of shelves
+            val flatItems =
+                response.contents
+                    ?.tabbedSearchResultsRenderer
+                    ?.tabs
+                    ?.firstOrNull()
+                    ?.tabRenderer
+                    ?.content
+                    ?.sectionListRenderer
+                    ?.contents
+                    ?.flatMap { it.itemSectionRenderer?.contents.orEmpty() }
+                    ?.mapNotNull { it.musicResponsiveListItemRenderer }
+                    ?.mapNotNull(SearchSummaryPage.Companion::fromMusicResponsiveListItemRenderer)
+                    ?.distinctBy { it.id }
+                    .orEmpty()
+            if (flatItems.isNotEmpty()) addGrouped(flatItems)
 
             // Merge sections with the same title
             val mergedSummaries =

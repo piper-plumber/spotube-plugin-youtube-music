@@ -12,6 +12,8 @@ import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.model
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.ArtistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.PlaylistItem
 import io.github.piper_plumber.spotube_plugin_youtube_music.core.innertube.models.SongItem
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 internal fun PlaylistItem.toMetadataPlaylist(): org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist {
     val songCount = songCountText?.let {
@@ -42,6 +44,12 @@ internal fun PlaylistItem.toMetadataPlaylist(): org.spotube.plugin_interfaces.pl
 }
 
 class RealMetadataSearchAPI(private val youTube: YouTube) : MetadataSearchAPI {
+    private companion object {
+        const val PLAYLIST_TOKEN_PREFIX = "playlists:"
+        // Not a character YouTube continuation tokens contain
+        const val PLAYLIST_TOKEN_SEPARATOR = "|"
+    }
+
     override val supportedSearchTypes: List<MetadataSupportedSearchType>
         get() = listOf(
             MetadataSupportedSearchType.TRACK,
@@ -145,30 +153,53 @@ class RealMetadataSearchAPI(private val youTube: YouTube) : MetadataSearchAPI {
         )
     }
 
+    /**
+     * YouTube Music splits playlist search into "Featured playlists" (small, curated) and
+     * "Community playlists" (huge, paginated). Both are searched and merged; the continuation token
+     * packs the pending token of each source so every page keeps following whichever has more.
+     */
     override suspend fun searchPlaylists(
         query: String,
         pagination: PaginationStrategy?
     ): PaginationResult<MetadataSearchResult.Playlist> {
-        val continuationToken = when (pagination) {
-            is PaginationStrategy.Continuation -> pagination.continuationToken
-            else -> null
+        val token = (pagination as? PaginationStrategy.Continuation)?.continuationToken
+
+        val (featured, community) = coroutineScope {
+            if (token == null) {
+                val featured = async { youTube.search(query, YouTube.SearchFilter.FILTER_FEATURED_PLAYLIST).getOrNull() }
+                val community = async { youTube.search(query, YouTube.SearchFilter.FILTER_COMMUNITY_PLAYLIST).getOrThrow() }
+                featured.await() to community.await()
+            } else {
+                val (featuredToken, communityToken) = unpackPlaylistToken(token)
+                val featured = async { featuredToken?.let { youTube.searchContinuation(it).getOrNull() } }
+                val community = async { communityToken?.let { youTube.searchContinuation(it).getOrThrow() } }
+                featured.await() to community.await()
+            }
         }
 
-        val searchResult = if (continuationToken != null) {
-            youTube.searchContinuation(continuationToken).getOrThrow()
-        } else {
-            youTube.search(query, YouTube.SearchFilter.FILTER_FEATURED_PLAYLIST).getOrThrow()
-        }
-
-        val playlists = searchResult.items
+        val playlists = (featured?.items.orEmpty() + community?.items.orEmpty())
             .filterIsInstance<PlaylistItem>()
+            .distinctBy { it.id }
             .map { MetadataSearchResult.Playlist(it.toMetadataPlaylist()) }
+
+        val next = packPlaylistToken(featured?.continuation, community?.continuation)
 
         return PaginationResult(
             items = playlists,
             totalCount = -1,
-            nextPagination = searchResult.continuation?.let { PaginationStrategy.Continuation(it) }
+            nextPagination = next?.let { PaginationStrategy.Continuation(it) }
         )
+    }
+
+    private fun packPlaylistToken(featured: String?, community: String?): String? =
+        if (featured == null && community == null) null
+        else "$PLAYLIST_TOKEN_PREFIX${featured.orEmpty()}$PLAYLIST_TOKEN_SEPARATOR${community.orEmpty()}"
+
+    private fun unpackPlaylistToken(token: String): Pair<String?, String?> {
+        // Tokens that were not produced by packPlaylistToken are community continuations
+        if (!token.startsWith(PLAYLIST_TOKEN_PREFIX)) return null to token
+        val (featured, community) = token.removePrefix(PLAYLIST_TOKEN_PREFIX).split(PLAYLIST_TOKEN_SEPARATOR, limit = 2)
+        return featured.ifEmpty { null } to community.ifEmpty { null }
     }
 
     override suspend fun searchUsers(
