@@ -1,6 +1,7 @@
 package io.github.piper_plumber.spotube_plugin_youtube_music.metadata
 
 import org.spotube.plugin_interfaces.host_apis.Cookie
+import org.spotube.plugin_interfaces.host_apis.HttpMethod
 import org.spotube.plugin_interfaces.host_apis.PersistedStorageAPI
 import org.spotube.plugin_interfaces.host_apis.WebViewAPI
 import org.spotube.plugin_interfaces.plugin_apis.core.CoreAPI
@@ -20,6 +21,10 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import net.swiftzer.semver.SemVer
 
 @Serializable
@@ -86,7 +91,44 @@ class RealCoreAPI(
     override val requiresAuthentication = true
 
     override suspend fun checkPluginUpdates(currentVersion: SemVer): PluginUpdateInfo? {
-        return null
+        return try {
+            val response = youTube.innerTube.httpClientAPI.request(
+                method = HttpMethod.Get,
+                url = LATEST_RELEASE_URL,
+                requestHeaders = mapOf(
+                    "Accept" to "application/vnd.github+json",
+                    "User-Agent" to "spotube-plugin-youtube-music",
+                ),
+                body = null,
+            )
+            if (response.statusCode != 200 || response.body == null) {
+                logger.d { "Update check failed with HTTP ${response.statusCode}" }
+                return null
+            }
+
+            val release = Json.parseToJsonElement(response.body!!).jsonObject
+            val tag = release["tag_name"]?.jsonPrimitive?.contentOrNull ?: return null
+            val latest = SemVer.parse(tag.trim().removePrefix("v").removePrefix("V"))
+
+            if (latest <= currentVersion) {
+                logger.d { "Plugin is up to date ($currentVersion >= $latest)" }
+                return null
+            }
+
+            val assets = release["assets"]?.jsonArray.orEmpty().map { it.jsonObject }
+            val asset = assets.firstOrNull { it["name"]?.jsonPrimitive?.contentOrNull == "plugin.smplug" }
+                ?: assets.firstOrNull { it["name"]?.jsonPrimitive?.contentOrNull?.endsWith(".smplug") == true }
+                ?: return null
+
+            PluginUpdateInfo(
+                latestVersion = latest.toString(),
+                directDownloadUrl = asset["browser_download_url"]!!.jsonPrimitive.content,
+                releaseNotes = release["body"]?.jsonPrimitive?.contentOrNull.orEmpty(),
+            )
+        } catch (e: Exception) {
+            logger.d { "Update check failed: ${e.message}" }
+            null
+        }
     }
 
     override fun supportMarkdownText(currentVersion: SemVer): String {
@@ -147,4 +189,8 @@ class RealCoreAPI(
         loggedInStateFlow.value = false
     }
 
+    private companion object {
+        const val LATEST_RELEASE_URL =
+            "https://api.github.com/repos/piper-plumber/spotube-plugin-youtube-music/releases/latest"
+    }
 }
