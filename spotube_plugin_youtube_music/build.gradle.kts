@@ -19,7 +19,7 @@ plugins {
 spotubePlugin {
     name = "YouTube Music"
     version = "0.1.0"
-    apiVersion = "0.0.1"
+    apiVersion = "0.1.0"
     description = "YouTube Music plugin for Spotube metadata fetching"
     author = "Piper Plumber"
     capabilities = listOf(
@@ -28,6 +28,8 @@ spotubePlugin {
         PluginCapability.WEBVIEW
     )
     abilities = listOf(PluginAbility.METADATA)
+    // getCookies + evaluateJavaScript (yt.config_) once login lands on music.youtube.com
+    cookieDomains = listOf("music.youtube.com")
     contact = "Piper Plumber <piper.plumber@tutamail.com>"
     repository = "https://github.com/piper-plumber/spotube-plugin-youtube-music"
     bugs = "https://github.com/piper-plumber/spotube-plugin-youtube-music/issues"
